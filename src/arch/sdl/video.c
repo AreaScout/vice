@@ -54,11 +54,21 @@
 #include "vkbd.h"
 #include "vsidui_sdl.h"
 #include "vsync.h"
+#ifdef HAVE_LIMA
+#include "limare.h"
+#include <GLES2/gl2.h>
+#endif
 
 #ifdef SDL_DEBUG
 #define DBG(x)  log_debug x
 #else
 #define DBG(x)
+#endif
+
+#ifdef HAVE_LIMA
+#define LIMA_TEXEL_FORMAT_BGR_565		0x0E
+#define LIMA_TEXEL_FORMAT_RGB_888		0x15
+#define LIMA_TEXEL_FORMAT_RGBA_8888		0x16
 #endif
 
 static log_t sdlvideo_log = LOG_ERR;
@@ -103,6 +113,27 @@ static const float sdl_gl_vertex_coord[4 * 4] = {
     -1.0f, -1.0f, +1.0f, +1.0f,
     /* Flip X&Y */
     +1.0f, -1.0f, +1.0f, -1.0f
+};
+#endif
+
+#ifdef HAVE_LIMA
+static video_canvas_t *lima_canvas_create(video_canvas_t *canvas, unsigned int *width, unsigned int *height);
+static int makecol_RGB24(int r, int g, int b);
+int lima_set_palette(struct video_canvas_s *canvas, struct palette_s *palette);
+
+struct limare_state *state;
+
+float vertices[4][3] = {
+	{-1, -1,  0},
+	{ 1, -1,  0},
+	{-1,  1,  0},
+	{ 1,  1,  0}
+};
+float coords[4][2] = {
+	{0, 1},
+	{1, 1},
+	{0, 0},
+	{1, 0}
 };
 #endif
 
@@ -277,10 +308,14 @@ static const resource_string_t resources_string[] = {
     RESOURCE_STRING_LIST_END
 };
 
+#ifdef HAVE_LIMA
+#define VICE_DEFAULT_BITDEPTH 24
+#else
 #ifdef WATCOM_COMPILE
 #define VICE_DEFAULT_BITDEPTH 32
 #else
 #define VICE_DEFAULT_BITDEPTH 0
+#endif
 #endif
 
 static const resource_int_t resources_int[] = {
@@ -384,6 +419,49 @@ int video_init_cmdline_options(void)
 int video_init(void)
 {
     sdlvideo_log = log_open("SDLVideo");
+#ifdef HAVE_LIMA
+    const char* vertex_shader_source =
+	"attribute vec4 in_vertex;\n"
+	"attribute vec2 in_coord;\n"
+	"\n"
+	"varying vec2 coord;\n"
+	"\n"
+	"void main()\n"
+	"{\n"
+	"    gl_Position = in_vertex;\n"
+	"    coord = in_coord;\n"
+	"}\n";
+    const char* fragment_shader_source =
+	"precision mediump float;\n"
+	"\n"
+	"varying vec2 coord;\n"
+	"\n"
+	"uniform sampler2D in_texture;\n"
+
+	"void main()\n"
+	"{\n"
+        "    gl_FragColor = texture2D(in_texture, coord);\n"
+	"}\n";
+
+    state = limare_init();
+    if (!state)
+	return -1;
+
+    limare_buffer_clear(state);
+
+    if(limare_state_setup(state, 0, 0, 0x00505050))
+	return -1;
+
+    limare_enable(state, GL_DEPTH_TEST);
+    limare_enable(state, GL_CULL_FACE);
+    limare_depth_mask(state, 1);
+
+    int program = limare_program_new(state);
+    vertex_shader_attach(state, program, vertex_shader_source);
+    fragment_shader_attach(state, program, fragment_shader_source);
+
+    limare_link(state);
+#endif
     return 0;
 }
 
@@ -460,6 +538,72 @@ static void sdl_gl_set_viewport(unsigned int src_w, unsigned int src_h, unsigned
 }
 #endif
 
+#ifdef HAVE_LIMA
+static video_canvas_t *lima_canvas_create(video_canvas_t *canvas, unsigned int *width, unsigned int *height)
+{
+    SDL_Surface *new_screen = NULL;
+    int next_canvas = 0;
+    unsigned int new_width, new_height;
+    unsigned int actual_width, actual_height;
+    int hwscale = 1;
+    SDL_Surface *dummy = NULL;
+    int lightpen_updated = 0;
+
+    if (canvas->videoconfig->doublesizex) {
+        *width *= (canvas->videoconfig->doublesizex + 1);
+    }
+
+    if (canvas->videoconfig->doublesizey) {
+        *height *= (canvas->videoconfig->doublesizey + 1);
+    }
+
+    /* initialize real size and dsize state on first call */
+    if ((canvas->real_width == 0) || (canvas->real_height == 0))
+    {
+        canvas->real_width = *width;
+        canvas->real_height = *height;
+    }
+
+    actual_width = new_width = *width;
+    actual_height = new_height = *height;
+
+    // This is just to initialize SDL input in a dummy window we keep it as small as possible
+    // we can't associate it with the RGB surface because we draw directly to the gpu
+    // so we leave it here standing alone, doing nothing just look pretty :)
+    dummy = SDL_SetVideoMode( 1, 1, 0, SDL_ANYFORMAT | SDL_FULLSCREEN);
+    // Create a SDL RGB surface to draw it later on in HW
+    new_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, new_width, new_height, sdl_bitdepth, 0, 0, 0, 0);
+
+    if (!new_screen)
+    {
+        log_error(sdlvideo_log, "SDL_SetVideoMode failed!");
+        return NULL;
+    }
+
+    canvas->depth = sdl_bitdepth;
+    canvas->width = new_width;
+    canvas->height = new_height;
+    canvas->screen = new_screen;
+    canvas->actual_width = actual_width;
+    canvas->actual_height = actual_height;
+
+    log_message(sdlvideo_log, "Canvas %ix%i, real %ix%i", new_width, new_height, canvas->real_width, canvas->real_height);
+
+    /* Update lightpen adjustment parameters */
+    if (canvas == sdl_active_canvas && !lightpen_updated) {
+        sdl_lightpen_adjust.max_x = actual_width;
+        sdl_lightpen_adjust.max_y = actual_height;
+
+        sdl_lightpen_adjust.scale_x = (double)*width / (double)actual_width;
+        sdl_lightpen_adjust.scale_y = (double)*height / (double)actual_height;
+    }
+
+    video_canvas_set_palette(canvas, canvas->palette);
+
+    return canvas;
+}
+#endif
+
 static video_canvas_t *sdl_canvas_create(video_canvas_t *canvas, unsigned int *width, unsigned int *height)
 {
     SDL_Surface *new_screen;
@@ -481,6 +625,10 @@ static video_canvas_t *sdl_canvas_create(video_canvas_t *canvas, unsigned int *w
 #else
     rmask = 0x000000ff, gmask = 0x0000ff00, bmask = 0x00ff0000, amask = 0xff000000;
 #endif
+#endif
+
+#ifdef HAVE_LIMA
+    return lima_canvas_create(canvas, width, height);
 #endif
 
     DBG(("%s: %i,%i (%i)", __func__, *width, *height, canvas->index));
@@ -846,14 +994,78 @@ void video_canvas_refresh(struct video_canvas_s *canvas, unsigned int xs, unsign
         SDL_GL_SwapBuffers();
     } else
 #endif
+#ifdef HAVE_LIMA
+    int texture = limare_texture_upload(state, canvas->screen->pixels, canvas->width, canvas->height, LIMA_TEXEL_FORMAT_RGB_888, 0);
+
+    limare_frame_new(state);
+
+    limare_attribute_pointer(state, "in_vertex", LIMARE_ATTRIB_FLOAT,
+    				 3, 0, 4, vertices);
+    limare_attribute_pointer(state, "in_coord", LIMARE_ATTRIB_FLOAT,
+    				 2, 0, 4, coords);
+
+    limare_texture_attach(state, "in_texture", texture);
+
+    if (limare_draw_arrays(state, GL_TRIANGLE_STRIP, 0, 4))
+      return;
+
+    if (limare_frame_flush(state))
+      return;
+
+    limare_buffer_swap(state);
+
+    state->textures[0] = 0;
+    state->texture_handles = 0;
+    state->aux_mem_used = 0;
+#else
     SDL_UpdateRect(canvas->screen, xi, yi, w, h);
+#endif
 }
+
+#ifdef HAVE_LIMA
+static int makecol_RGB24(int r, int g, int b)
+{
+    int c = (b << 16) | (g << 8) | r;
+    return c;
+}
+
+int lima_set_palette(struct video_canvas_s *canvas, struct palette_s *palette)
+{
+    int i, col;
+
+    if (palette == NULL) {
+        return 0; /* no palette, nothing to do */
+    }
+
+    for (i = 0; i < (int)palette->num_entries; i++)
+    {
+        col = makecol_RGB24(palette->entries[i].red, palette->entries[i].green, palette->entries[i].blue);
+
+        video_render_setphysicalcolor(canvas->videoconfig, i, col, canvas->depth);
+    }
+
+    for (i = 0; i < 256; i++)
+    {
+        video_render_setrawrgb(i, makecol_RGB24(i, 0, 0), makecol_RGB24(0, i, 0), makecol_RGB24(0, 0, i));
+    }
+
+    video_render_initraw(canvas->videoconfig);
+
+    canvas->palette = palette;
+
+    return 0;
+}
+#endif
 
 int video_canvas_set_palette(struct video_canvas_s *canvas, struct palette_s *palette)
 {
     unsigned int i, col;
     SDL_PixelFormat *fmt;
     SDL_Color colors[256];
+
+#ifdef HAVE_LIMA
+    return lima_set_palette(canvas, palette);
+#endif
 
     DBG(("video_canvas_set_palette canvas: %p", canvas));
 
@@ -1071,6 +1283,9 @@ void video_canvas_destroy(struct video_canvas_s *canvas)
     }
 
     lib_free(canvas->fullscreenconfig);
+#ifdef HAVE_LIMA
+    limare_finish(state);
+#endif
 }
 
 void video_add_handlers(void)
@@ -1088,6 +1303,16 @@ void sdl_ui_init_finalize(void)
     unsigned int width = sdl_active_canvas->draw_buffer->canvas_width;
     unsigned int height = sdl_active_canvas->draw_buffer->canvas_height;
 
+#ifdef HAVE_LIMA
+    // Set some default values
+    sdl_active_canvas->videoconfig->rendermode = 3;
+    sdl_active_canvas->videoconfig->double_size_enabled = 0;
+    sdl_active_canvas->videoconfig->doublesizey = 0;
+    sdl_active_canvas->videoconfig->doublesizex = 0;
+    sdl_active_canvas->videoconfig->filter = 0;
+#endif
+
     sdl_canvas_create(sdl_active_canvas, &width, &height); /* set the real canvas size */
     sdl_ui_finalized = 1;
 }
+
