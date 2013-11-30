@@ -327,6 +327,34 @@ UI_MENU_DEFINE_RADIO(SDLLimitMode)
       radio_SDLLimitMode_callback,                  \
       (ui_callback_data_t)SDL_LIMIT_MODE_FIXED },
 
+#ifdef HAVE_LIMA
+#define SDL_ASPECT_MODE_OFF    0
+#define SDL_ASPECT_MODE_TRUE   1
+UI_MENU_DEFINE_RADIO(SDLGLAspectMode)
+
+static const ui_menu_entry_t aspect_menu[] = {
+    { "Off",
+      MENU_ENTRY_RESOURCE_RADIO,
+      radio_SDLGLAspectMode_callback,
+      (ui_callback_data_t)SDL_ASPECT_MODE_OFF },
+    { "On",
+      MENU_ENTRY_RESOURCE_RADIO,
+      radio_SDLGLAspectMode_callback,
+      (ui_callback_data_t)SDL_ASPECT_MODE_TRUE },
+    SDL_MENU_LIST_END
+};
+
+UI_MENU_DEFINE_STRING(AspectRatio)
+
+#define VICE_SDL_SIZE_MENU_OPENGL_ITEMS(chip)               \
+    SDL_MENU_ITEM_SEPARATOR,                                \
+    SDL_MENU_ITEM_TITLE("Lima Video Config"),               \
+    { "Keep Aspect ratio",                                  \
+      MENU_ENTRY_SUBMENU,                                   \
+      submenu_radio_callback,                               \
+      (ui_callback_data_t)aspect_menu },
+#endif
+
 #ifdef HAVE_HWSCALE
 
 UI_MENU_DEFINE_RADIO(SDLGLAspectMode)
@@ -395,6 +423,9 @@ static const ui_menu_entry_t vicii_size_menu[] = {
 #ifdef HAVE_HWSCALE
     VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
 #endif
+#ifdef HAVE_LIMA
+    VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
+#endif
     SDL_MENU_LIST_END
 };
 
@@ -413,6 +444,9 @@ static const ui_menu_entry_t vdc_size_menu[] = {
     VICE_SDL_SIZE_MENU_ITEMS(VDC)
 #ifdef HAVE_HWSCALE
     VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VDC)
+#endif
+#ifdef HAVE_LIMA
+    VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
 #endif
     SDL_MENU_LIST_END
 };
@@ -433,6 +467,9 @@ static const ui_menu_entry_t crtc_size_menu[] = {
 #ifdef HAVE_HWSCALE
     VICE_SDL_SIZE_MENU_OPENGL_ITEMS(Crtc)
 #endif
+#ifdef HAVE_LIMA
+    VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
+#endif
     SDL_MENU_LIST_END
 };
 
@@ -450,6 +487,9 @@ static const ui_menu_entry_t ted_size_menu[] = {
 #ifdef HAVE_HWSCALE
     VICE_SDL_SIZE_MENU_OPENGL_ITEMS(TED)
 #endif
+#ifdef HAVE_LIMA
+    VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
+#endif
     SDL_MENU_LIST_END
 };
 
@@ -466,6 +506,9 @@ static const ui_menu_entry_t vic_size_menu[] = {
     VICE_SDL_SIZE_MENU_ITEMS(VIC)
 #ifdef HAVE_HWSCALE
     VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VIC)
+#endif
+#ifdef HAVE_LIMA
+    VICE_SDL_SIZE_MENU_OPENGL_ITEMS(VICII)
 #endif
     SDL_MENU_LIST_END
 };
