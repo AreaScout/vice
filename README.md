@@ -11,7 +11,7 @@ $ sudo apt-get install flex bison autogen automake libsdl1.2-dev texinfo
 
 $ ./autogen.sh
 
-$ ./configure --enable-lima --enable-sdlui
+$ ./configure --enable-lima 
 
 $ make
 
