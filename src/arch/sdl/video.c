@@ -66,9 +66,12 @@
 #endif
 
 #ifdef HAVE_LIMA
-#define LIMA_TEXEL_FORMAT_BGR_565		0x0E
-#define LIMA_TEXEL_FORMAT_RGB_888		0x15
-#define LIMA_TEXEL_FORMAT_RGBA_8888		0x16
+#define LIMA_TEXEL_FORMAT_BGR_565       0x0E
+#define LIMA_TEXEL_FORMAT_RGB_888       0x15
+#define LIMA_TEXEL_FORMAT_RGBA_8888     0x16
+
+#define SDL_ASPECT_MODE_OFF    0
+#define SDL_ASPECT_MODE_TRUE   1
 #endif
 
 static log_t sdlvideo_log = LOG_ERR;
@@ -117,6 +120,7 @@ static const float sdl_gl_vertex_coord[4 * 4] = {
 #endif
 
 #ifdef HAVE_LIMA
+static int lima_gl_aspect_mode;
 static video_canvas_t *lima_canvas_create(video_canvas_t *canvas, unsigned int *width, unsigned int *height);
 static int makecol_RGB24(int r, int g, int b);
 int lima_set_palette(struct video_canvas_s *canvas, struct palette_s *palette);
@@ -222,6 +226,43 @@ static int set_sdl_window_height(int h, void *param)
     sdl_window_height = h;
     return 0;
 }
+
+#ifdef HAVE_LIMA
+static int set_lima_gl_aspect_mode(int v, void *param)
+{
+    int old_v = lima_gl_aspect_mode;
+    float val;
+
+    if(v == SDL_ASPECT_MODE_TRUE)
+    {
+    	if(state->width * 9 == state->height * 16)
+    		val = 1/(1.0f / 9 * 4 * 3);
+    	else if(state->width * 10 == state->height * 16)
+    		val = 1/(1.0f / 10 * 4 * 3);
+    	else
+    		val = 1.00f;
+
+    	vertices[0][0] =  val/-1;
+        vertices[1][0] =  val;
+        vertices[2][0] =  val/-1;
+        vertices[3][0] =  val;
+    }
+    else
+    {
+    	vertices[0][0] = -1.00;
+        vertices[1][0] =  1.00;
+        vertices[2][0] = -1.00;
+        vertices[3][0] =  1.00;
+    }
+    lima_gl_aspect_mode = v;
+
+    if (old_v != v) {
+    	printf("New Aspect %d", v);
+    }
+
+    return 0;
+}
+#endif
 
 #ifdef HAVE_HWSCALE
 static int set_sdl_gl_aspect_mode(int v, void *param)
@@ -348,6 +389,10 @@ static const resource_int_t resources_int[] = {
     { "SDLGLFlipY", 0, RES_EVENT_NO, NULL,
       &sdl_gl_flipy, set_sdl_gl_flipy, NULL },
 #endif
+#ifdef HAVE_LIMA
+    { "SDLGLAspectMode", SDL_ASPECT_MODE_OFF, RES_EVENT_NO, NULL,
+      &lima_gl_aspect_mode, set_lima_gl_aspect_mode, NULL },
+#endif
     RESOURCE_INT_LIST_END
 };
 
@@ -445,12 +490,12 @@ int video_init(void)
 
     state = limare_init();
     if (!state)
-	return -1;
+    	return -1;
 
     limare_buffer_clear(state);
 
-    if(limare_state_setup(state, 0, 0, 0x00505050))
-	return -1;
+    if(limare_state_setup(state, 0, 0, 0x00000000))
+    	return -1;
 
     limare_enable(state, GL_DEPTH_TEST);
     limare_enable(state, GL_CULL_FACE);
