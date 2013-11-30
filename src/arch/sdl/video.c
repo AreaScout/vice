@@ -242,14 +242,14 @@ static int set_lima_gl_aspect_mode(int v, void *param)
     	else
     		val = 1.00f;
 
-    	vertices[0][0] =  val/-1;
+        vertices[0][0] =  val/-1;
         vertices[1][0] =  val;
         vertices[2][0] =  val/-1;
         vertices[3][0] =  val;
     }
     else
     {
-    	vertices[0][0] = -1.00;
+        vertices[0][0] = -1.00;
         vertices[1][0] =  1.00;
         vertices[2][0] = -1.00;
         vertices[3][0] =  1.00;
