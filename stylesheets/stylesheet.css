@@ -267,7 +267,8 @@ Full-Width Styles
   max-width: 640px;
   padding: 20px 10px;
   margin: 0 auto;
-  border-style: solid;
+  border-right-style: solid;
+  border-left-style: solid;
   border-width: thin;
   border-color: rgb(37, 37, 37);
 }
@@ -298,6 +299,7 @@ Full-Width Styles
 
 #header_wrap .inner {
   padding: 50px 10px 30px 10px;
+  border: none;
 }
 
 #project_title {
