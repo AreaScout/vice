@@ -230,7 +230,6 @@ static int set_sdl_window_height(int h, void *param)
 #ifdef HAVE_LIMA
 static int set_lima_gl_aspect_mode(int v, void *param)
 {
-    int old_v = lima_gl_aspect_mode;
     float val;
 
     if(v == SDL_ASPECT_MODE_TRUE)
@@ -242,23 +241,19 @@ static int set_lima_gl_aspect_mode(int v, void *param)
     	else
     		val = 1.00f;
 
-        vertices[0][0] =  val/-1;
+    	vertices[0][0] =  val/-1;
         vertices[1][0] =  val;
         vertices[2][0] =  val/-1;
         vertices[3][0] =  val;
     }
     else
     {
-        vertices[0][0] = -1.00;
+    	vertices[0][0] = -1.00;
         vertices[1][0] =  1.00;
         vertices[2][0] = -1.00;
         vertices[3][0] =  1.00;
     }
     lima_gl_aspect_mode = v;
-
-    if (old_v != v) {
-    	printf("New Aspect %d", v);
-    }
 
     return 0;
 }
