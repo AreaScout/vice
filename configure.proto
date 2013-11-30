@@ -1841,7 +1841,11 @@ if test x"$with_sdlsound" = "xyes" -o x"$enable_sdlui" = "xyes"; then
         old_libs=$LIBS
 
         if test x"$enable_lima" = "xyes"; then
-            LIBS="$LIBS -llimare"
+            AC_CHECK_HEADER(GLES2/gl2.h, [found_gles2_h=yes], [found_gles2_h=no],)
+            if test x"$found_gles2_h" = "xno"; then
+                AC_MSG_ERROR([GLES2/gl2.h headers missing])
+            fi
+            AC_CHECK_LIB(limare, limare_init,[LIBS="$LIBS -llimare"],AC_MSG_ERROR([Limadriver library missing]),)
             AC_DEFINE(HAVE_LIMA,,[Enable LIMA Video Driver window scaling])
         fi
 
