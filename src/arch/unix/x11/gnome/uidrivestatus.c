@@ -146,9 +146,11 @@ static void set_led2(GdkColor *color1, GdkColor *color2, int i, int drive_number
     GdkGC *app_gc = get_toplevel();
     drive_status_widget *ds = &app_shells[i].drive_status[drive_number];
 
+    /* LED 1 (left) */
     gdk_gc_set_rgb_fg_color(app_gc, color1);
     gdk_draw_rectangle(ds->led1_pixmap, app_gc, TRUE, 0, 0, LED_WIDTH / 2, LED_HEIGHT);
     gtk_widget_queue_draw(ds->led1);
+    /* LED 2 (right) */
     gdk_gc_set_rgb_fg_color(app_gc, color2);
     gdk_draw_rectangle(ds->led2_pixmap, app_gc, TRUE, 0, 0, LED_WIDTH / 2, LED_HEIGHT);
     gtk_widget_queue_draw(ds->led2);
@@ -156,15 +158,17 @@ static void set_led2(GdkColor *color1, GdkColor *color2, int i, int drive_number
 
 #else
 
-static void set_led(GdkColor *color, int i, int j)
+static void set_led(GdkColor *color1, int i, int j)
 {
     drive_status_widget *ts = &app_shells[i].drive_status[j];
     if (ts) {
         cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(ts->led));
-        gdk_cairo_set_source_color(cr, color);
         cairo_translate(cr, 0, (gtk_widget_get_allocated_height(ts->led) - LED_HEIGHT) / 2);
-        cairo_rectangle (cr, 0, 0, LED_WIDTH, LED_HEIGHT);
-        cairo_fill (cr);
+        if (color1) {
+            gdk_cairo_set_source_color(cr, color1);
+            cairo_rectangle (cr, 0, 0, LED_WIDTH, LED_HEIGHT);
+            cairo_fill (cr);
+        }
         cairo_destroy(cr);
     }
 }
@@ -174,12 +178,20 @@ static void set_led2(GdkColor *color1, GdkColor *color2, int i, int j)
     drive_status_widget *ts = &app_shells[i].drive_status[j];
     if (ts) {
         cairo_t *cr = gdk_cairo_create(gtk_widget_get_window(ts->led));
-        gdk_cairo_set_source_color(cr, color1);
-        cairo_translate(cr, 0, ((gtk_widget_get_allocated_height(ts->led) - LED_HEIGHT) / 2));
-        cairo_rectangle (cr, 0, -(LED_HEIGHT / 2) - 1, LED_WIDTH, LED_HEIGHT);
-        gdk_cairo_set_source_color(cr, color2);
-        cairo_rectangle (cr, 0, (LED_HEIGHT / 2) + 1, LED_WIDTH, LED_HEIGHT);
-        cairo_fill (cr);
+        cairo_translate(cr, ((gtk_widget_get_allocated_width(ts->led) - LED_WIDTH) / 2), 
+                        ((gtk_widget_get_allocated_height(ts->led) - LED_HEIGHT) / 2));
+        /* LED 1 (left) */
+        if (color1) {
+            gdk_cairo_set_source_color(cr, color1);
+            cairo_rectangle (cr, -1, 0, LED_WIDTH / 2, LED_HEIGHT);
+            cairo_fill (cr);
+        }
+        /* LED 2 (right) */
+        if (color2) {
+            gdk_cairo_set_source_color(cr, color2);
+            cairo_rectangle (cr, (LED_WIDTH / 2) + 1, 0, LED_WIDTH / 2, LED_HEIGHT);
+            cairo_fill (cr);
+        }
         cairo_destroy(cr);
     }
 }
@@ -310,7 +322,7 @@ void ui_enable_drive_status(ui_drive_enable_t enable, int *drive_led_color)
             DBG(("ui_enable_drive_status: drive %d type %d", i, drive_get_disk_drive_type(i)));
             /* if (strcmp(&(last_attached_images[i][0]), "") != 0) { //} */
             if (drive_get_disk_drive_type(i) != DRIVE_TYPE_NONE) {
-                enable |= 1<<i;
+                enable |= 1 << i;
             }
         }
     }
@@ -332,10 +344,12 @@ void ui_enable_drive_status(ui_drive_enable_t enable, int *drive_led_color)
                         gtk_widget_hide(app_shells[i].drive_status[j].led2);
 #endif
                     } else {
-                        gtk_widget_hide(app_shells[i].drive_status[j].led);
 #if !defined(HAVE_CAIRO)
+                        gtk_widget_hide(app_shells[i].drive_status[j].led);
                         gtk_widget_show(app_shells[i].drive_status[j].led1);
                         gtk_widget_show(app_shells[i].drive_status[j].led2);
+#else
+                        gtk_widget_show(app_shells[i].drive_status[j].led);
 #endif
                     }
                 } else {

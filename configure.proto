@@ -12,7 +12,7 @@ VICE_ARG_INIT()
 
 VICE_VERSION_MAJOR=2
 VICE_VERSION_MINOR=4
-VICE_VERSION_BUILD=5
+VICE_VERSION_BUILD=6
 
 VICE_ARG_WITH_LIST(xaw3d,         [  --with-xaw3d            use Xaw3d library instead of plain Xaw])
 VICE_ARG_WITH_LIST(readline,      [  --without-readline      do not try to use the system's readline library])
@@ -1192,6 +1192,7 @@ AC_CHECK_HEADERS(sys/types.h)
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 
 dnl Check whether inline functions are available.
 AC_C_INLINE
@@ -2383,7 +2384,7 @@ dnl some platforms have some of the functions in libposix,
 dnl so we check it out second.
 AC_CHECK_LIB(posix,gettimeofday,,,$LIBS)
 
-AC_CHECK_FUNCS(gettimeofday memmove atexit strerror strcasecmp strncasecmp dirname mkstemp swab getcwd getpwuid rewinddir strtok strtok_r snprintf vsnprintf ltoa ultoa strlcpy strlwr strrev)
+AC_CHECK_FUNCS(gettimeofday memmove atexit strerror strcasecmp strncasecmp dirname mkstemp swab getcwd getpwuid random rewinddir strtok strtok_r snprintf vsnprintf ltoa ultoa strlcpy strlwr strrev)
 AC_CHECK_FUNCS(strdup, [have_strdup_func=yes], [have_strdup_func=no])
 
 if test x"$have_strdup_func" = "xno"; then

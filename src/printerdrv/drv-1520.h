@@ -1,8 +1,8 @@
 /*
- * daa.h
+ * drv-1520.h - 1520 plotter driver.
  *
  * Written by
- *  Andreas Boose <viceteam@t-online.de>
+ *  Olaf Seibert <rhialto@falu.nl>
  *
  * This file is part of VICE, the Versatile Commodore Emulator.
  * See README for copyright notice.
@@ -24,12 +24,13 @@
  *
  */
 
-#ifndef VICE_DAA_H
-#define VICE_DAA_H
+#ifndef VICE_DRV_1520_H
+#define VICE_DRV_1520_H
 
-#include "types.h"
+#include <stdio.h>
 
-extern const BYTE daa_reg_a[];
-extern const BYTE daa_reg_f[];
+extern int drv_1520_init_resources(void);
+extern int drv_1520_init(void);
+extern void drv_1520_shutdown(void);
 
 #endif

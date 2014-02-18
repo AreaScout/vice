@@ -129,6 +129,7 @@ ui_menu_toggle  toggle_list[] = {
     { "JoyOpposite", MENU_ALLOW_OPPOSITE_JOY },
     { "IECDevice4", MENU_PRINTER_4_IEC },
     { "IECDevice5", MENU_PRINTER_5_IEC },
+    { "IECDevice6", MENU_PRINTER_6_IEC },
     { "PrinterUserport", MENU_TOGGLE_USERPORT_PRINTER },
     { NULL, 0 }
 };
@@ -205,6 +206,12 @@ ui_res_possible_values Printer5Emulation[] = {
     { -1, 0 }
 };
 
+ui_res_possible_values Printer6Emulation[] = {
+    { PRINTER_DEVICE_NONE, MENU_PRINTER_6_EMULATION_NONE },
+    { PRINTER_DEVICE_FS, MENU_PRINTER_6_EMULATION_FS },
+    { -1, 0 }
+};
+
 ui_res_possible_strings Printer4Driver[] = {
     { "ascii", MENU_PRINTER_4_DRIVER_ASCII },
     { "mps803", MENU_PRINTER_4_DRIVER_MPS803 },
@@ -218,6 +225,12 @@ ui_res_possible_strings Printer5Driver[] = {
     { "mps803", MENU_PRINTER_5_DRIVER_MPS803 },
     { "nl10", MENU_PRINTER_5_DRIVER_NL10 },
     { "raw", MENU_PRINTER_5_DRIVER_RAW },
+    { NULL, 0 }
+};
+
+ui_res_possible_strings Printer6Driver[] = {
+    { "1520", MENU_PRINTER_6_DRIVER_1520 },
+    { "raw", MENU_PRINTER_6_DRIVER_RAW },
     { NULL, 0 }
 };
 
@@ -241,6 +254,12 @@ ui_res_possible_strings Printer5OutputType[] = {
     { NULL, 0 }
 };
 
+ui_res_possible_strings Printer6OutputType[] = {
+    { "text", MENU_PRINTER_6_TYPE_TEXT },
+    { "graphics", MENU_PRINTER_6_TYPE_GFX },
+    { NULL, 0 }
+};
+
 ui_res_possible_strings UserportPrinterOutputType[] = {
     { "text", MENU_USERPORT_PRINTER_TYPE_TEXT },
     { "graphics", MENU_USERPORT_PRINTER_TYPE_GFX },
@@ -261,6 +280,13 @@ ui_res_possible_values Printer5OutputDevice[] = {
     { -1, 0 }
 };
 
+ui_res_possible_values Printer6OutputDevice[] = {
+    { 0, MENU_PRINTER_6_DEV_1 },
+    { 1, MENU_PRINTER_6_DEV_2 },
+    { 2, MENU_PRINTER_6_DEV_3 },
+    { -1, 0 }
+};
+
 ui_res_possible_values UserportPrinterOutputDevice[] = {
     { 0, MENU_USERPORT_PRINTER_DEV_1 },
     { 1, MENU_USERPORT_PRINTER_DEV_2 },
@@ -277,18 +303,22 @@ ui_res_value_list value_list[] = {
     { "AutostartPrgMode", AutostartPrgMode },
     { "Printer4", Printer4Emulation },
     { "Printer5", Printer5Emulation },
+    { "Printer6", Printer6Emulation },
     { "Printer4TextDevice", Printer4OutputDevice },
     { "Printer5TextDevice", Printer5OutputDevice },
+    { "Printer6TextDevice", Printer6OutputDevice },
     { "PrinterUserportTextDevice", UserportPrinterOutputDevice },
     { NULL, NULL }
 };
 
 ui_res_string_list string_list[] = {
     { "Printer4Driver", Printer4Driver },
-    { "Printer4Driver", Printer5Driver },
+    { "Printer5Driver", Printer5Driver },
+    { "Printer6Driver", Printer6Driver },
     { "PrinterUserportDriver", UserportPrinterDriver },
     { "Printer4Output", Printer4OutputType },
     { "Printer5Output", Printer5OutputType },
+    { "Printer6Output", Printer6OutputType },
     { "PrinterUserportOutput", UserportPrinterOutputType },
     { NULL, NULL }
 };
@@ -876,8 +906,11 @@ void ui_dispatch_events(void)
             case MENU_PRINTER_5_SEND_FF:
                 printer_formfeed(1);
                 break;
-            case MENU_USERPORT_PRINTER_SEND_FF:
+            case MENU_PRINTER_6_SEND_FF:
                 printer_formfeed(2);
+                break;
+            case MENU_USERPORT_PRINTER_SEND_FF:
+                printer_formfeed(3);
                 break;
             case MENU_OUTPUT_DEVICE_1:
                 ui_select_file(B_SAVE_PANEL, PRINTER_OUTPUT_FILE1, (void*)0);
@@ -897,24 +930,24 @@ void ui_dispatch_events(void)
                 abouttext = util_concat("BeVICE Version ", VERSION,
 #endif
                                         "\n (", PLATFORM_CPU, " ", PLATFORM_OS, " ", PLATFORM_COMPILER, ")\n\n",
-                                        "(c) 1998-2013 Dag Lem\n",
-                                        "(c) 1999-2013 Andreas Matthies\n",
-                                        "(c) 1999-2013 Martin Pottendorfer\n",
-                                        "(c) 2005-2013 Marco van den Heuvel\n",
-                                        "(c) 2006-2013 Christian Vogelgsang\n",
-                                        "(c) 2007-2013 Fabrizio Gennari\n",
-                                        "(c) 2007-2013 Daniel Kahlin\n",
-                                        "(c) 2008-2013 Antti S. Lankila\n",
-                                        "(c) 2009-2013 Groepaz\n",
-                                        "(c) 2009-2013 Ingo Korb\n",
-                                        "(c) 2009-2013 Errol Smith\n",
-                                        "(c) 2010-2013 Olaf Seibert\n",
-                                        "(c) 2011-2013 Marcus Sutton\n",
-                                        "(c) 2011-2013 Ulrich Schulz\n",
-                                        "(c) 2011-2013 Stefan Haubenthal\n",
-                                        "(c) 2011-2013 Thomas Giesel\n",
-                                        "(c) 2011-2013 Kajtar Zsolt\n",
-                                        "(c) 2012-2013 Benjamin 'BeRo' Rosseaux\n",
+                                        "(c) 1998-2014 Dag Lem\n",
+                                        "(c) 1999-2014 Andreas Matthies\n",
+                                        "(c) 1999-2014 Martin Pottendorfer\n",
+                                        "(c) 2005-2014 Marco van den Heuvel\n",
+                                        "(c) 2006-2014 Christian Vogelgsang\n",
+                                        "(c) 2007-2014 Fabrizio Gennari\n",
+                                        "(c) 2007-2014 Daniel Kahlin\n",
+                                        "(c) 2008-2014 Antti S. Lankila\n",
+                                        "(c) 2009-2014 Groepaz\n",
+                                        "(c) 2009-2014 Ingo Korb\n",
+                                        "(c) 2009-2014 Errol Smith\n",
+                                        "(c) 2010-2014 Olaf Seibert\n",
+                                        "(c) 2011-2014 Marcus Sutton\n",
+                                        "(c) 2011-2014 Ulrich Schulz\n",
+                                        "(c) 2011-2014 Stefan Haubenthal\n",
+                                        "(c) 2011-2014 Thomas Giesel\n",
+                                        "(c) 2011-2014 Kajtar Zsolt\n",
+                                        "(c) 2012-2014 Benjamin 'BeRo' Rosseaux\n",
                                         "\nOfficial VICE homepage:\n",
                                         "http://vice-emu.sourceforge.net/",
                                         NULL);

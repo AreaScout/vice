@@ -13,7 +13,6 @@ COMMON_EXTRA_DIST = .descr \
 	ChangeLog.2 \
 	COPYING \
 	FEEDBACK \
-	Doxyfile \
 	INSTALL \
 	NEWS \
 	vice.spec \
@@ -186,10 +185,10 @@ endif
 
 if UNIX_MACOSX_COMPILE
 bindist:
-	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH nozip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
+	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
 
 bindistzip:
-	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH zip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
+	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
 endif
 
 if UNIX_SKYOS_COMPILE

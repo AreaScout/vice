@@ -1,5 +1,5 @@
 /*
- * platform_syllable_runtime_os.c - Syllable runtime version discovery.
+ * platform_minix_runtime_os.c - Minix runtime version discovery.
  *
  * Written by
  *  Marco van den Heuvel <blackystardust68@yahoo.com>
@@ -25,50 +25,60 @@
  */
 
 /* Tested and confirmed working on:
-   - Syllable 0.6.7
-*/
+ *
+ * Minix-vmd 1.7
+ * Minix 3.1.2a
+ * Minix 3.1.3a
+ * Minix 3.1.5
+ * Minix 3.1.6
+ * Minix 3.1.7
+ * Minix 3.1.8
+ * Minix 3.2.0
+ * Minix 3.2.1
+ */
 
 #include "vice.h"
 
-#ifdef __SYLLABLE__
+#ifdef __minix
 
-#include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <string.h>
 
-#ifdef __GLIBC__
-#include <gnu/libc-version.h>
-#endif
-
-static system_info psi;
-static char os_string[256];
-static int got_cpu = 0;
+static char os[200];
 static int got_os = 0;
 
-char *platform_get_syllable_runtime_cpu(void)
-{
-    if (!got_cpu) {
-        get_system_info_v(&psi, SYS_INFO_VERSION);
-        got_cpu = 1;
-    }
-    return psi.zKernelCpuArch;
-}
-
-char *platform_get_syllable_runtime_os(void)
+char *platform_get_minix_runtime_os(void)
 {
     struct utsname name;
 
     if (!got_os) {
         uname(&name);
-        get_system_info_v(&psi, SYS_INFO_VERSION);
-        sprintf(os_string, "%s v%s.%s", psi.zKernelSystem, name.version, name.release);
 
-#ifdef __GLIBC__
-        sprintf(os_string, "%s (glibc %s)", os_string, gnu_get_libc_version());
-#endif
-
+        if (!strcasecmp(name.sysname, "Minix-vmd")) {
+            sprintf(os, "%s %s", name.sysname, name.release);
+        } else {
+            sprintf(os, "%s %s.%s", name.sysname, name.release, name.version);
+        }
         got_os = 1;
     }
-    return os_string;
+    return os;
 }
+
+#ifdef __ACK__
+static char cpu[100];
+static int got_cpu = 0;
+
+char *platform_get_minix_runtime_cpu(void)
+{
+    struct utsname name;
+
+    if (!got_cpu) {
+        uname(&name);
+        sprintf(cpu, "%s", name.arch);
+        got_cpu = 1;
+    }
+    return cpu;
+}
+#endif
+
 #endif

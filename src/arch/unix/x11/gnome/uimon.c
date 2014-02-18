@@ -166,7 +166,7 @@ static gboolean plain_key_pressed(char **input_buffer, guint keyval)
             return TRUE;
         case GDK_KEY(dead_tilde):
             *input_buffer =
-                append_char_to_input_buffer(*input_buffer, GDK_KEY_asciitilde);
+                append_char_to_input_buffer(*input_buffer, GDK_KEY(asciitilde));
             return TRUE;
     }
 }
@@ -311,6 +311,7 @@ console_t *uimon_window_open(void)
         gtk_window_set_position(GTK_WINDOW(fixed.window), GTK_WIN_POS_CENTER);
         gtk_widget_set_app_paintable(fixed.window, TRUE);
         gtk_window_set_deletable(GTK_WINDOW(fixed.window), TRUE);
+        gtk_window_set_resizable(GTK_WINDOW(fixed.window), FALSE);
         fixed.term = vte_terminal_new();
         vte_terminal_set_scrollback_lines (VTE_TERMINAL(fixed.term), 1000);
         vte_terminal_set_scroll_on_output (VTE_TERMINAL(fixed.term), TRUE);

@@ -104,6 +104,9 @@ static winver_t windows_versions[] = {
     { "Windows 2008 R2 Enterprise Storage Server", "Windows Storage Server 2008 R2 Enterprise", 1, 0 },
     { "Windows 2008 R2 Enterprise Storage Server", "Windows Storage Server 2008 R2 Enterprise", 5, 0 },
     { "Windows 2008 R2 Enterprise Storage Server", "Windows Storage Server 2008 R2 Enterprise", 6, 0 },
+    { "Windows 2008 R2 Foundation Server", "Windows Server 2008 R2 Foundation", 1, 0 },
+    { "Windows 2008 R2 Foundation Server", "Windows Server 2008 R2 Foundation", 5, 0 },
+    { "Windows 2008 R2 Foundation Server", "Windows Server 2008 R2 Foundation", 6, 0 },
     { NULL, NULL, 0, 0 }
 };
 
@@ -251,16 +254,18 @@ static char *get_windows_version(void)
     for (i = 0; windows_versions[i].name; i++) {
         if (!strcmp(windows_versions[i].windows_name, windows_name)) {
             if (windows_versions[i].server == windows_server) {
-                if (windows_versions[i].flags == windows_flags) {
+                 if (windows_versions[i].flags == windows_flags) {
                     return windows_versions[i].name;
                 }
             }
         }
     }
+
     return "Unknown Windows version";
 }
 
-static char interix_platform_version[100] = "";
+static char interix_platform_version[100];
+static int got_version = 0;
 
 char *platform_get_interix_runtime_os(void)
 {
@@ -268,17 +273,17 @@ char *platform_get_interix_runtime_os(void)
     int rcode;
     struct utsname name;
 
-    uname(&name);
-
-    sprintf(interix_platform_version, "Interix %s", name.release);
-
-    rcode = getreg_strvalue((PCWSTR)NT_SERVICEPACK_KEY, (PCWSTR)NT_SERVICEPACK_VALUE, service_pack, 100);
-    if (!rcode) {
-        sprintf(interix_platform_version, "%s (%s %s)", interix_platform_version, get_windows_version(), service_pack);
-    } else {
-        sprintf(interix_platform_version, "%s (%s)", interix_platform_version, get_windows_version());
+    if (!got_version) {
+        uname(&name);
+        sprintf(interix_platform_version, "Interix %s", name.release);
+        rcode = getreg_strvalue((PCWSTR)NT_SERVICEPACK_KEY, (PCWSTR)NT_SERVICEPACK_VALUE, service_pack, 100);
+        if (!rcode) {
+            sprintf(interix_platform_version, "%s (%s %s)", interix_platform_version, get_windows_version(), service_pack);
+        } else {
+            sprintf(interix_platform_version, "%s (%s)", interix_platform_version, get_windows_version());
+        }
+        got_version = 1;
     }
-
     return interix_platform_version;
 }
 #endif

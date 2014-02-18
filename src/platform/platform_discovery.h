@@ -361,7 +361,16 @@
 
 /* Minix discovery */
 #ifdef __minix
-#  define PLATFORM_OS "Minix"
+#  ifdef __minix_vmd
+#    define PLATFORM_OS "Minix-vmd"
+#  else
+#    include <minix/config.h>
+#    if defined(OS_RELEASE) && defined(OS_VERSION)
+#      define PLATFORM_OS "Minix " OS_RELEASE "." OS_VERSION
+#    else
+#      define PLATFORM_OS "Minix"
+#    endif
+#  endif
 #endif
 
 
@@ -422,6 +431,12 @@
 /* vxworks discovery */
 #ifdef __vxworks__
 #  define PLATFORM_OS "VXWORKS"
+#endif
+
+
+/* System V Release 4 discovery */
+#if !defined(PLATFORM_OS) && defined(__svr4__)
+#define PLATFORM_OS "Unix System V Release 4"
 #endif
 
 
